@@ -1,0 +1,563 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dinosaurio Google</title>
+    <style>
+
+* {
+    padding: 0;
+    margin: 0;
+}
+
+body{
+    height: 100vh;
+    background: #4f4f4f; /*color de fondo de la pagina*/
+    display: flex;
+    align-items: center;
+}
+
+.contenedor {
+    width: 920px;
+    height: 280px;
+    margin: 0 auto;
+    
+    position: relative;
+
+    /*color del contenedor*/
+    background: linear-gradient( #008f9e , transparent) #ffe2d1;/*linear-gradient(#90ebff, white);*/
+    transition: background-color 1s linear;
+    overflow: hidden;
+}
+
+
+.dino {
+    width: 84px;
+    height: 84px;
+
+    position: absolute;
+    bottom: 22px;
+    left: 42px;
+    z-index: 2;
+
+    background: url(img/dino.png) repeat-x 0px 0px;
+    background-size: 336px 84px;
+    background-position-x: 0px;
+    
+}
+
+.dino-corriendo {
+    animation: animarDino 0.25s steps(2) infinite; /* codigo que selecciona las dos secciones de la imagen que se mostraran para hacer el efecto de correr */
+}
+.dino-estrellado {
+    background-position-x: -252px;
+}
+
+.suelo {
+    width: 200%;
+    height: 42px;
+
+    position: absolute;
+    bottom: 0;
+    left: 0;
+
+    background: url(img/suelo.png) repeat-x 0px 0px;
+    background-size: 50% 42px;
+
+}
+
+.cactus{
+    width: 46px;
+    height: 96px;
+
+    position: absolute;
+    bottom: 16px;
+    left: 600px;
+    z-index: 1;
+
+    background: url(img/cactus1.png) no-repeat;
+}
+.cactus2{
+    width: 98px;
+    height: 66px;
+
+    background: url(img/cactus2.png) no-repeat;
+}
+
+.nube{
+    width: 92px;
+    height: 26px;
+
+    position: absolute;
+    z-index: 0;
+
+    background: url(img/nube.png) no-repeat;
+    background-size: 92px 26px;
+}
+
+.score{
+    width: 100px;
+    height: 30px;
+
+    position: absolute;
+    top: 5px;
+    right: 15px;
+    z-index: 10;
+
+    color: #d48871;
+    font-family: Verdana;
+    font-size: 30px;
+    font-weight: bold;
+    text-align: right;
+}
+
+/*Estilos del titulo de GAME OVER*/
+.game-over{
+    display: none;
+
+    position: absolute;
+    width: 100%;
+
+
+    text-align: center;
+    color: #7e928b;
+    font-size: 30px;
+    font-family: Verdana;
+    font-weight: 700;
+}
+
+/*Estilos del titulo de pausa*/
+.pausa{
+    display: none;
+
+    position: absolute;
+    width: 100%;
+
+
+    text-align: center;
+    color: #7e928b;
+    font-size: 30px;
+    font-family: Verdana;
+    font-weight: 700;
+}
+
+/*estilos a testo de los controles*/
+.controles{
+
+    position: absolute;
+    text-align: left;
+    color: white;
+    font-family: Verdana;
+    margin-bottom: 400px;
+    margin-left: 20px;
+}
+
+/*estilos a testo de los controles*/
+.titulo{
+
+    position: absolute;
+    text-align: center;
+    color: white;
+    font-family: Verdana;
+    margin-bottom: 550px;
+    margin-left: auto;
+    margin-right: auto;
+   
+}
+
+@keyframes animarDino{
+    from{
+        background-position-x: -84px;
+    }
+    to{
+        background-position-x: -252px;
+    }
+}
+
+
+    </style>
+</head>
+
+<body>
+
+    <div class="titulo">
+        <h2>Dinosaurio de Google</h2>
+    </div>
+
+    <div class="controles">
+        <p>Saltar: Tecla Space o Click<br>
+        Pausar: Tecla Enter<br>
+        Reinicio: Tecla A
+        </p>
+    </div>
+
+
+    <div class="contenedor">
+
+        <div class="suelo"></div>
+        
+        <div class="dino dino-corriendo"></div>
+
+        <div class="score">0</div>
+
+    </div>
+
+    <div class="game-over">GAME OVER</div>
+    <div class="pausa">PAUSA</div>
+    
+
+<script>
+
+//****** GAME LOOP ********//
+
+var time = new Date();
+var deltaTime = 0;
+
+if(document.readyState === "complete" || document.readyState === "interactive"){
+    setTimeout(Init, 1);
+}else{
+    document.addEventListener("DOMContentLoaded", Init); 
+}
+
+function Init() {
+    time = new Date();
+    Start();
+    Loop();
+}
+
+function Loop() {
+    deltaTime = (new Date() - time) / 1000;
+    time = new Date();
+    Update();
+    requestAnimationFrame(Loop);
+}
+
+//****** GAME LOGIC ********//
+
+var sueloY = 22;
+var velY = 0;
+var impulso = 900;
+var gravedad = 2500;
+
+var dinoPosX = 42;
+var dinoPosY = sueloY; 
+
+var sueloX = 0;
+var velEscenario = 1280/2;
+var gameVel = 1;
+var score = 0;
+
+var parado = false;
+var saltando = false;
+
+var tiempoHastaObstaculo = 3;
+var tiempoObstaculoMin = 0.7;
+var tiempoObstaculoMax = 1.8;
+var obstaculoPosY = 16;
+var obstaculos = [];
+
+var tiempoHastaNube = 0.5;
+var tiempoNubeMin = 0.7;
+var tiempoNubeMax = 2.7;
+var maxNubeY = 270;
+var minNubeY = 100;
+var nubes = [];
+var velNube = 0.5;
+
+var contenedor;
+var dino;
+var textoScore;
+var suelo;
+var gameOver;
+var pausa;
+
+function Start() {
+    gameOver = document.querySelector(".game-over");
+    suelo = document.querySelector(".suelo");
+    contenedor = document.querySelector(".contenedor");
+    textoScore = document.querySelector(".score");
+    dino = document.querySelector(".dino");
+    document.addEventListener("keydown", HandleKeyDown);
+    //eventos adicionales
+    document.addEventListener("touchstart", HandleKeyDown);
+    document.addEventListener("touchstart", HandleKeyDown);
+    document.addEventListener("click", HandleKeyDown);
+    //agregando la clase pausa
+    pausa = document.querySelector(".pausa");
+   
+}
+
+function Update() {
+    if(parado) return;
+    
+    MoverDinosaurio();
+    MoverSuelo();
+    DecidirCrearObstaculos();
+    DecidirCrearNubes();
+    MoverObstaculos();
+    MoverNubes();
+    DetectarColision();
+
+    velY -= gravedad * deltaTime;
+}
+
+//funcion que activa la funcion saltar cuando se oprime la barra de space del teclado
+/*function HandleKeyDown(ev){
+    if(ev.keyCode == 32){
+        Saltar();
+    }
+}*/
+
+//funcion que activa la funcion saltar cuando se oprime la barra de space del teclado o se da tac
+//a la pantalla del celular
+function HandleKeyDown(event) {
+    //muesta el evento que se activa
+    console.log("Evento detectado: " + event.type);
+    if (event.type === "keydown" && event.keyCode === 32) {
+        // Detecta la tecla de espacio presionada
+        Saltar();
+    } else if (event.type === "touchstart") {
+        // Detecta el evento táctil en la pantalla
+        Saltar();
+    }else if (event.type === "click" && event.button === 0) {
+        // Detecta un clic izquierdo
+        Saltar();
+    }
+}
+
+function Saltar(){
+    if(dinoPosY === sueloY){
+        saltando = true;
+        velY = impulso;
+        dino.classList.remove("dino-corriendo");
+    }
+}
+
+function MoverDinosaurio() {
+    dinoPosY += velY * deltaTime;
+    if(dinoPosY < sueloY){
+        
+        TocarSuelo();
+    }
+    dino.style.bottom = dinoPosY+"px";
+}
+
+function TocarSuelo() {
+    dinoPosY = sueloY;
+    velY = 0;
+    if(saltando){
+        dino.classList.add("dino-corriendo");
+    }
+    saltando = false;
+}
+
+//funcion que permite el efecto de moviemiento del suelo
+function MoverSuelo() {
+    sueloX += CalcularDesplazamiento();
+    suelo.style.left = -(sueloX % contenedor.clientWidth) + "px";
+}
+
+//funcion que calcula el desplazamiento en el juego
+function CalcularDesplazamiento() {
+    return velEscenario * deltaTime * gameVel;
+}
+
+//funcion que agregara o removera clases cuando e estrelle el dinosaurio
+function Estrellarse() {
+    dino.classList.remove("dino-corriendo");
+    dino.classList.add("dino-estrellado");
+    parado = true;
+}
+
+//funcion que determina en que tiempo crea mas obstaculos
+function DecidirCrearObstaculos() {
+    tiempoHastaObstaculo -= deltaTime;
+    if(tiempoHastaObstaculo <= 0) {
+        CrearObstaculo();
+    }
+}
+
+//funcion que determina en que tiempo crea mas nubes
+function DecidirCrearNubes() {
+    tiempoHastaNube -= deltaTime;
+    if(tiempoHastaNube <= 0) {
+        CrearNube();
+    }
+}
+
+//funcion que crea mas obstaculos
+function CrearObstaculo() {
+    var obstaculo = document.createElement("div");
+    contenedor.appendChild(obstaculo);
+    obstaculo.classList.add("cactus");
+    if(Math.random() > 0.5) obstaculo.classList.add("cactus2");
+    obstaculo.posX = contenedor.clientWidth;
+    obstaculo.style.left = contenedor.clientWidth+"px";
+
+    obstaculos.push(obstaculo);
+    tiempoHastaObstaculo = tiempoObstaculoMin + Math.random() * (tiempoObstaculoMax-tiempoObstaculoMin) / gameVel;
+}
+
+//funcion que crea mas nubes 
+function CrearNube() {
+    var nube = document.createElement("div");
+    contenedor.appendChild(nube);
+    nube.classList.add("nube");
+    nube.posX = contenedor.clientWidth;
+    nube.style.left = contenedor.clientWidth+"px";
+    nube.style.bottom = minNubeY + Math.random() * (maxNubeY-minNubeY)+"px";
+    
+    nubes.push(nube);
+    tiempoHastaNube = tiempoNubeMin + Math.random() * (tiempoNubeMax-tiempoNubeMin) / gameVel;
+}
+
+//funcion que mueve los obstaculos
+function MoverObstaculos() {
+    for (var i = obstaculos.length - 1; i >= 0; i--) {
+        if(obstaculos[i].posX < -obstaculos[i].clientWidth) {
+            obstaculos[i].parentNode.removeChild(obstaculos[i]);
+            obstaculos.splice(i, 1);
+            GanarPuntos();
+        }else{
+            obstaculos[i].posX -= CalcularDesplazamiento();
+            obstaculos[i].style.left = obstaculos[i].posX+"px";
+        }
+    }
+}
+
+//funcion que mueve las nubes cuando esta el juego activo
+function MoverNubes() {
+    for (var i = nubes.length - 1; i >= 0; i--) {
+        if(nubes[i].posX < -nubes[i].clientWidth) {
+            nubes[i].parentNode.removeChild(nubes[i]);
+            nubes.splice(i, 1);
+        }else{
+            nubes[i].posX -= CalcularDesplazamiento() * velNube;
+            nubes[i].style.left = nubes[i].posX+"px";
+        }
+    }
+}
+
+//funcion que aumenta los puntos cada vez que se pasa un obstaculo
+function GanarPuntos() {
+    score++;
+    textoScore.innerText = score;
+    if(score == 5){
+        gameVel = 1.5;
+        contenedor.classList.add("mediodia");
+    }else if(score == 10) {
+        gameVel = 2;
+        contenedor.classList.add("tarde");
+    } else if(score == 20) {
+        gameVel = 3;
+        contenedor.classList.add("noche");
+    }
+    suelo.style.animationDuration = (3/gameVel)+"s";
+}
+
+//funcion que se activa para mostrar el titulo de que se perdio el juego
+function GameOver() {
+    Estrellarse();
+    gameOver.style.display = "block";//muestra el titulo e GAME OVER
+   
+}
+
+//funcion que detecta cuando se choca con un obstaculo
+function DetectarColision() {
+    for (var i = 0; i < obstaculos.length; i++) {
+        if(obstaculos[i].posX > dinoPosX + dino.clientWidth) {
+            //EVADE
+            break; //al estar en orden, no puede chocar con más
+        }else{
+            if(IsCollision(dino, obstaculos[i], 10, 30, 15, 20)) {
+                // Ejecuta GameOver y espera 2 segundos antes de recargar la página
+                GameOver();
+
+                setTimeout(function () {
+                    location.reload(); // se recarga la página cuando se pierde
+                }, 500); // 500 milisegundos = 1/2 segundo
+                    
+            }
+        }
+    }
+}
+
+//funcion cuando hay una colision
+function IsCollision(a, b, paddingTop, paddingRight, paddingBottom, paddingLeft) {
+    var aRect = a.getBoundingClientRect();
+    var bRect = b.getBoundingClientRect();
+
+    return !(
+        ((aRect.top + aRect.height - paddingBottom) < (bRect.top)) ||
+        (aRect.top + paddingTop > (bRect.top + bRect.height)) ||
+        ((aRect.left + aRect.width - paddingRight) < bRect.left) ||
+        (aRect.left + paddingLeft > (bRect.left + bRect.width))
+    );
+}
+
+/*---------------------Codigo agregado---------------------*/
+
+/*funcion que pausa el juego*/
+function Loop() {
+    deltaTime = (new Date() - time) / 1000;
+    time = new Date();
+    if (!parado) {
+        Update();
+        requestAnimationFrame(Loop);
+        
+         dino.classList.add("dino-corriendo");//devuelve de nuevo la animacion de correr
+         pausa.style.display = "none";//oculta de nuevo el texto de pausa
+
+    } else {
+        // El juego está pausado, puedes agregar aquí la lógica de pausa.
+        // Por ejemplo, detener las animaciones o mostrar un mensaje de pausa.
+        dino.classList.remove("dino-corriendo");//remueve la animacion de correr al pausar el juego
+
+        //condicional cuando se esta mostrando el texto de GAME OVER
+        if(gameOver.style.display === "block"){ 
+        
+            pausa.style.display = "none";//no muestra el texto de pausa
+        }else{
+             pausa.style.display = "block";//muestra el texto de pausa
+        }
+
+        requestAnimationFrame(Loop); // Continúa solicitando fotogramas para mostrar el mensaje de pausa.
+    }
+}
+
+// Agrega un evento de escucha al documento para detectar cuando se presiona una tecla
+document.addEventListener("keydown", function (event) {
+    if (event.key === "Enter") {
+        if (parado) {
+            // Si el juego está pausado, reanúdalo.
+            parado = false;
+            Loop();
+        } else {
+            // Si el juego no está pausado, pásalo.
+            parado = true;
+
+        }
+    }
+});
+
+// Agrega un evento de escucha al documento para detectar cuando se presiona una tecla
+document.addEventListener("keydown", function (event) {
+    
+    /*si se oprime la tecla a se reinicia el juego*/
+    if (event.key === "a") {
+            // Si se presiona la tecla "Shift," recarga la página.
+            location.reload();
+        } 
+    
+});
+
+//muestra las teclas que se han oprimido en consola
+document.addEventListener("keydown", function(event) {
+  console.log("Tecla presionada: " + event.key);
+});
+
+</script>
+</body>
+</html>
